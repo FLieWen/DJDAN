@@ -49,19 +49,19 @@
 # print(f"电极数量: {num_electrodes}")
 
 
-import scipy.io as sio
+# import scipy.io as sio
 
-# 加载.mat文件
-file_path = 'data/feature_extractor_BCIIV2b_mat/B01E_features.mat'  # 替换为您的文件路径
-mat_data = sio.loadmat(file_path)
+# # 加载.mat文件
+# file_path = 'data/feature_extractor_BCIIV2b_mat/B01E_features.mat'  # 替换为您的文件路径
+# mat_data = sio.loadmat(file_path)
 
-# 查看.mat文件中所有的键
-print("Keys in the .mat file:", mat_data.keys())
+# # 查看.mat文件中所有的键
+# print("Keys in the .mat file:", mat_data.keys())
 
-# 检查data和label的维度
-data = mat_data['extracted_features']  # 替换为实际的字段名
-label = mat_data['label']  # 替换为实际的字段名
+# # 检查data和label的维度
+# data = mat_data['extracted_features']  # 替换为实际的字段名
+# label = mat_data['label']  # 替换为实际的字段名
 
-# 打印维度
-print("Shape of data:", data.shape)
-print("Shape of label:", label.shape)
+# # 打印维度
+# print("Shape of data:", data.shape)
+# print("Shape of label:", label.shape)
