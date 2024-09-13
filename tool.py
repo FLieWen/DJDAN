@@ -18,9 +18,9 @@
 # print(features_struct)
 
 
-import scipy.io
-mat_data=scipy.io.loadmat('data\BCIIV2b_mat\B01E.mat')
-# 假设mat文件中有一个名为'my_matrix'的矩阵变量
-matrix_data = mat_data['data']
-#打印矩阵的维度
-print(matrix_data.shape)
+# import scipy.io
+# mat_data=scipy.io.loadmat('data\BCIIV2b_mat\B01E.mat')
+# # 假设mat文件中有一个名为'my_matrix'的矩阵变量
+# matrix_data = mat_data['data']
+# #打印矩阵的维度
+# print(matrix_data.shape)
