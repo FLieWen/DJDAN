@@ -165,8 +165,8 @@ class EEGFeatureExtractor(nn.Module):
         return x
 
 # 定义数据文件夹路径
-data_folder = 'data/T_Standardized_BCIIV2b_mat'
-filtered_data_folder = 'data/T_feature_extractor_BCIIV2b_mat'
+data_folder = 'data/Standardized_BCIIV2b_mat'
+filtered_data_folder = 'data/feature_extractor_BCIIV2b_mat'
 
 # 创建输出文件夹
 if not os.path.exists(filtered_data_folder):
@@ -204,7 +204,7 @@ for file in os.listdir(data_folder):
                         {'extracted_features': output_np, 'label': labels[sample_idx]})
 
 # 保存模型
-model_path = "T_feature_extractor.pth"
+model_path = "feature_extractor.pth"
 torch.save(model.state_dict(), model_path)
 
 print("模型已保存！")

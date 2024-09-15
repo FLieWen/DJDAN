@@ -52,14 +52,14 @@
 import scipy.io as sio
 
 # 加载.mat文件
-file_path = 'data/E_feature_extractor_BCIIV2b_mat/B09E_features.mat'  # 替换为您的文件路径
+file_path = 'data/T_predictions/prediction_sample_542.mat'  # 替换为您的文件路径
 mat_data = sio.loadmat(file_path)
 
 # 查看.mat文件中所有的键
 print("Keys in the .mat file:", mat_data.keys())
 
 # 检查data和label的维度
-data = mat_data['data']  # 替换为实际的字段名
+data = mat_data['prediction']  # 替换为实际的字段名
 label = mat_data['label']  # 替换为实际的字段名
 
 # 打印维度
