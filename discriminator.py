@@ -1,137 +1,206 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.utils.data import DataLoader, Dataset
+import scipy.io as sio
+import os
+import numpy as np
 
-# 全局鉴别器，D-Conv (1 x 61, 2)
-class GlobalDiscriminator(nn.Module):
-    def __init__(self, input_size):
-        super(GlobalDiscriminator, self).__init__()
-        # 定义一个卷积层，输入大小为 1x61，输出为2（源域/目标域的二分类任务）
-        self.conv1 = nn.Conv1d(in_channels=input_size, out_channels=2, kernel_size=61)
+# 加载预训练的特征提取器
+class EEGFeatureExtractor(nn.Module):
+    def __init__(self, num_electrodes):
+        super(EEGFeatureExtractor, self).__init__()
+        
+        # Temporal Convolution: 1D convolution along the time axis
+        self.temporal_conv = nn.Conv1d(in_channels=num_electrodes, 
+                                       out_channels=40, 
+                                       kernel_size=25, 
+                                       stride=1)
+        
+        # Spatial Convolution: 1D convolution along the electrode axis
+        self.spatial_conv = nn.Conv1d(in_channels=40, 
+                                      out_channels=40, 
+                                      kernel_size=num_electrodes, 
+                                      stride=1)
+        
+        # Batch Normalization
+        self.bn = nn.BatchNorm1d(40)
+        
+        # Average Pooling: Pooling over time
+        self.avg_pool = nn.AvgPool1d(kernel_size=75, stride=15)
+        
+        # Dropout
+        self.dropout = nn.Dropout(p=0.5)
+
+    def forward(self, x):
+        # Temporal Convolution
+        x = self.temporal_conv(x)
+        
+        # Spatial Convolution
+        x = self.spatial_conv(x)
+        
+        # Batch Normalization
+        x = self.bn(x)
+        
+        # Square Activation
+        x = x ** 2
+        
+        # Average Pooling
+        x = self.avg_pool(x)
+        
+        # Logarithm Activation
+        x = torch.log(x + 1e-6)  # Adding epsilon to avoid log(0)
+        
+        # Dropout
+        x = self.dropout(x)
+        
+        return x
+
+feature_extractor = EEGFeatureExtractor(num_electrodes=3)
+feature_extractor.load_state_dict(torch.load('feature_extractor.pth'))
+feature_extractor.eval()  # 切换到评估模式
+
+# 加载预训练的分类器
+class EEGClassifier(nn.Module):
+    def __init__(self, input_size, num_classes):
+        super(EEGClassifier, self).__init__()
+        # 定义一个1D卷积层，C-Conv，输出的类别数量是num_classes
+        self.conv1 = nn.Conv1d(in_channels=input_size, out_channels=num_classes, kernel_size=61)
+        # 使用Softmax激活函数将输出转为概率
         self.softmax = nn.Softmax(dim=1)
     
+    # 前向传播函数
     def forward(self, x):
         x = self.conv1(x)
         x = self.softmax(x)
         return x
 
-# 局部鉴别器，针对每个类别有一个独立的类内鉴别器，D-Conv (1 x 61, 2)
-class LocalDiscriminator(nn.Module):
-    def __init__(self, input_size, num_classes):
-        super(LocalDiscriminator, self).__init__()
-        # 为每个类别创建一个鉴别器
-        self.local_discriminators = nn.ModuleList([nn.Conv1d(in_channels=input_size, out_channels=2, kernel_size=61) for _ in range(num_classes)])
-        self.softmax = nn.Softmax(dim=1)
+classifier = EEGClassifier(input_size=60, num_classes=2)
+classifier.load_state_dict(torch.load('classifier.pth'))
+classifier.eval()  # 切换到评估模式
+
+# 数据加载器的定义
+class BCI_Dataset(Dataset):
+    def __init__(self, data_dir):
+        self.features, self.labels = self.load_data(data_dir)
     
-    def forward(self, x, class_idx):
-        # 针对给定类别，选择对应的类内鉴别器进行前向传播
-        x = self.local_discriminators[class_idx](x)
+    def load_data(self, data_dir):
+        features = []
+        labels = []
+        for file_name in os.listdir(data_dir):
+            if file_name.endswith('.mat'):
+                mat_data = sio.loadmat(os.path.join(data_dir, file_name))
+                features.append(mat_data['data'])  # 假设数据在 'data' 键中
+                labels.append(mat_data['label'].flatten())  # 标签展平为一维数组
+        features = np.concatenate(features, axis=0)
+        labels = np.concatenate(labels, axis=0)
+        return features, labels
+
+    def __len__(self):
+        return len(self.features)
+    
+    def __getitem__(self, idx):
+        feature = self.features[idx]
+        label = self.labels[idx]
+        return torch.tensor(feature, dtype=torch.float32), torch.tensor(label, dtype=torch.long)
+
+source_data_dir = 'data/BCIIV2b_mat/Processed_T_BCIIV2b_mat'
+target_data_dir = 'data/BCIIV2b_mat/Processed_E_BCIIV2b_mat'
+
+source_dataset = BCI_Dataset(source_data_dir)
+target_dataset = BCI_Dataset(target_data_dir)
+
+source_loader = DataLoader(source_dataset, batch_size=32, shuffle=True)
+target_loader = DataLoader(target_dataset, batch_size=32, shuffle=True)
+
+# 全局鉴别器的定义
+class GlobalDiscriminator(nn.Module):
+    def __init__(self):
+        super(GlobalDiscriminator, self).__init__()
+        self.conv = nn.Conv1d(in_channels=40, out_channels=2, kernel_size=61)
+        self.softmax = nn.Softmax(dim=1)
+
+    def forward(self, x):
+        x = self.conv(x)
         x = self.softmax(x)
         return x
 
-# 定义损失函数
-loss_fn = nn.BCELoss()  # 使用二分类交叉熵损失
+global_discriminator = GlobalDiscriminator()
 
-# 示例的训练循环，全局鉴别器
-def train_global_discriminator(global_discriminator, feature_extractor, source_loader, target_loader, optimizer, num_epochs=25):
-    for epoch in range(num_epochs):
-        global_discriminator.train()
-        running_loss = 0.0
-        
-        # 源域的数据标签为0
-        for inputs, _ in source_loader:
-            optimizer.zero_grad()
-            inputs = inputs.permute(0, 2, 1)  # 转换输入维度 (batch_size, 通道, 时间点)
-            source_features = feature_extractor(inputs)  # 提取源域的特征
-            
-            domain_labels = torch.zeros(source_features.size(0), 2)  # 源域标签设为0
-            domain_labels[:, 0] = 1  # 源域标签设为 [1, 0]
-            domain_labels = domain_labels.to(inputs.device)
+# 局部鉴别器的定义
+class LocalDiscriminator(nn.Module):
+    def __init__(self, num_classes):
+        super(LocalDiscriminator, self).__init__()
+        self.conv = nn.Conv1d(in_channels=40, out_channels=num_classes, kernel_size=61)
+        self.softmax = nn.Softmax(dim=1)
 
-            outputs = global_discriminator(source_features)
-            loss = loss_fn(outputs, domain_labels)
-            loss.backward()
-            optimizer.step()
-            running_loss += loss.item() * inputs.size(0)
-        
-        # 目标域的数据标签为1
-        for inputs, _ in target_loader:
-            optimizer.zero_grad()
-            inputs = inputs.permute(0, 2, 1)  # 转换输入维度
-            target_features = feature_extractor(inputs)  # 提取目标域特征
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.softmax(x)
+        return x
 
-            domain_labels = torch.zeros(target_features.size(0), 2)  # 目标域标签设为1
-            domain_labels[:, 1] = 1  # 目标域标签为 [0, 1]
-            domain_labels = domain_labels.to(inputs.device)
+local_discriminator = LocalDiscriminator(num_classes=2)
 
-            outputs = global_discriminator(target_features)
-            loss = loss_fn(outputs, domain_labels)
-            loss.backward()
-            optimizer.step()
-            running_loss += loss.item() * inputs.size(0)
-        
-        print(f"Epoch {epoch + 1}/{num_epochs}, Loss: {running_loss:.4f}")
-
-# 示例的局部鉴别器训练
-def train_local_discriminator(local_discriminator, classifier, feature_extractor, source_loader, target_loader, optimizer, num_classes, num_epochs=25):
-    for epoch in range(num_epochs):
-        local_discriminator.train()
-        running_loss = 0.0
-        
-        # 针对每个类别分别计算损失
-        for class_idx in range(num_classes):
-            # 源域的数据
-            for inputs, labels in source_loader:
-                optimizer.zero_grad()
-                inputs = inputs.permute(0, 2, 1)  # 转换输入维度
-                source_features = feature_extractor(inputs)
-                class_probs = classifier(inputs)  # 获取分类器的预测概率
-                
-                # 针对每个类别计算局部鉴别损失
-                class_preds = class_probs[:, class_idx].unsqueeze(1)  # 提取当前类别的概率
-                domain_labels = torch.zeros(source_features.size(0), 2)  # 源域标签为0
-                domain_labels[:, 0] = 1  # 源域标签 [1, 0]
-                domain_labels = domain_labels.to(inputs.device)
-
-                outputs = local_discriminator(source_features * class_preds, class_idx)
-                loss = loss_fn(outputs, domain_labels)
-                loss.backward()
-                optimizer.step()
-                running_loss += loss.item() * inputs.size(0)
-
-            # 目标域的数据
-            for inputs, _ in target_loader:
-                optimizer.zero_grad()
-                inputs = inputs.permute(0, 2, 1)
-                target_features = feature_extractor(inputs)
-                class_probs = classifier(inputs)  # 获取分类器的预测概率
-                
-                class_preds = class_probs[:, class_idx].unsqueeze(1)
-                domain_labels = torch.zeros(target_features.size(0), 2)  # 目标域标签为1
-                domain_labels[:, 1] = 1  # 目标域标签为 [0, 1]
-                domain_labels = domain_labels.to(inputs.device)
-
-                outputs = local_discriminator(target_features * class_preds, class_idx)
-                loss = loss_fn(outputs, domain_labels)
-                loss.backward()
-                optimizer.step()
-                running_loss += loss.item() * inputs.size(0)
-        
-        print(f"Epoch {epoch + 1}/{num_epochs}, Local Discriminator Loss: {running_loss:.4f}")
-
-# 初始化全局和局部鉴别器
-input_size = 61  # 根据实际特征的维度
-num_classes = 2  # 假设二分类任务
-global_discriminator = GlobalDiscriminator(input_size)
-local_discriminator = LocalDiscriminator(input_size, num_classes)
-
-# 定义优化器
+# 损失函数和训练过程
+criterion = nn.CrossEntropyLoss()
 optimizer_global = optim.Adam(global_discriminator.parameters(), lr=0.001)
 optimizer_local = optim.Adam(local_discriminator.parameters(), lr=0.001)
 
-# 你需要有源域和目标域的 DataLoader（source_loader 和 target_loader）
-# 以及已经训练好的分类器和特征提取器
+# GRL函数 (用于梯度反转层)
+class GradientReversalLayer(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, x):
+        return x.view_as(x)
 
-# 训练全局和局部鉴别器
-train_global_discriminator(global_discriminator, feature_extractor, source_loader, target_loader, optimizer_global, num_epochs=25)
-train_local_discriminator(local_discriminator, classifier, feature_extractor, source_loader, target_loader, optimizer_local, num_classes, num_epochs=25)
+    @staticmethod
+    def backward(ctx, grad_output):
+        return grad_output.neg()
+
+# 训练全局鉴别器和局部鉴别器
+for epoch in range(10):  # 假设训练10个epoch
+    for (source_data, _), (target_data, _) in zip(source_loader, target_loader):
+        # 提取源域和目标域特征
+        source_features = feature_extractor(source_data)
+        target_features = feature_extractor(target_data)
+
+        # 全局鉴别器
+        domain_labels_source = torch.zeros(source_features.size(0)).long()  # 源域标签为0
+        domain_labels_target = torch.ones(target_features.size(0)).long()  # 目标域标签为1
+
+        # 反转梯度
+        source_features_reversed = GradientReversalLayer.apply(source_features)
+        target_features_reversed = GradientReversalLayer.apply(target_features)
+
+        global_output_source = global_discriminator(source_features_reversed)
+        global_output_target = global_discriminator(target_features_reversed)
+
+        domain_labels_source = domain_labels_source.unsqueeze(1)
+        domain_labels_target = domain_labels_target.unsqueeze(1)
+
+        global_loss_source = criterion(global_output_source, domain_labels_source)
+        global_loss_target = criterion(global_output_target, domain_labels_target)
+
+        global_loss = global_loss_source + global_loss_target
+        optimizer_global.zero_grad()
+        global_loss.backward()
+        optimizer_global.step()
+
+        # 局部鉴别器
+        source_preds = classifier(source_features)
+        target_preds = classifier(target_features)
+
+        combined_source = torch.cat((source_features, source_preds), dim=1)
+        combined_target = torch.cat((target_features, target_preds), dim=1)
+
+        local_output_source = local_discriminator(combined_source)
+        local_output_target = local_discriminator(combined_target)
+
+        local_loss_source = criterion(local_output_source, domain_labels_source)
+        local_loss_target = criterion(local_output_target, domain_labels_target)
+
+        local_loss = local_loss_source + local_loss_target
+        optimizer_local.zero_grad()
+        local_loss.backward()
+        optimizer_local.step()
+
+    print(f'Epoch {epoch+1}, Global Loss: {global_loss.item()}, Local Loss: {local_loss.item()}')
