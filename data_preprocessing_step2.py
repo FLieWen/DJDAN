@@ -111,8 +111,8 @@ def exponential_moving_standardization(data, beta):
     return standardized_data
 
 # 定义文件夹路径
-data_folder = 'data/T_Filtered_BCIIV2b_mat'
-standardized_data_folder = 'data/T_Standardized_BCIIV2b_mat'
+data_folder = 'data/Filtered_BCIIV2b_mat'
+standardized_data_folder = 'data/Standardized_BCIIV2b_mat'
 
 # 创建输出文件夹
 if not os.path.exists(standardized_data_folder):

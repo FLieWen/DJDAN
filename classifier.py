@@ -45,7 +45,7 @@ class EEGClassifier(nn.Module):
     def __init__(self, input_size, num_classes):
         super(EEGClassifier, self).__init__()
         # 定义一个1D卷积层，C-Conv，输出的类别数量是num_classes
-        self.conv1 = nn.Conv1d(in_channels=input_size, out_channels=num_classes, kernel_size=61)
+        self.conv1 = nn.Conv1d(in_channels=input_size, out_channels=num_classes, kernel_size=40)
         # 使用Softmax激活函数将输出转为概率
         self.softmax = nn.Softmax(dim=1)
     
@@ -88,7 +88,7 @@ dataset = BCI_Dataset(data_dir)
 dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
 
 # 初始化模型、损失函数和优化器
-input_size = dataset.features.shape[1]  # 输入的特征维度
+input_size = 60  # 输入的特征维度
 num_classes = 2  # 二分类问题
 model = EEGClassifier(input_size, num_classes)
 

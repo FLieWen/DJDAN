@@ -49,22 +49,22 @@
 # print(f"电极数量: {num_electrodes}")
 
 
-import scipy.io as sio
+# import scipy.io as sio
 
-# 加载.mat文件
-file_path = 'data/T_predictions/prediction_sample_542.mat'  # 替换为您的文件路径
-mat_data = sio.loadmat(file_path)
+# # 加载.mat文件
+# file_path = 'data/T_predictions/prediction_sample_542.mat'  # 替换为您的文件路径
+# mat_data = sio.loadmat(file_path)
 
-# 查看.mat文件中所有的键
-print("Keys in the .mat file:", mat_data.keys())
+# # 查看.mat文件中所有的键
+# print("Keys in the .mat file:", mat_data.keys())
 
-# 检查data和label的维度
-data = mat_data['prediction']  # 替换为实际的字段名
-label = mat_data['label']  # 替换为实际的字段名
+# # 检查data和label的维度
+# data = mat_data['prediction']  # 替换为实际的字段名
+# label = mat_data['label']  # 替换为实际的字段名
 
-# 打印维度
-print("Shape of data:", data.shape)
-print("Shape of label:", label.shape)
+# # 打印维度
+# print("Shape of data:", data.shape)
+# print("Shape of label:", label.shape)
 
 
 # import scipy.io
@@ -112,3 +112,75 @@ print("Shape of label:", label.shape)
 #         print(f"Saved reshaped data to {new_file_path}")
 #     else:
 #         print(f"No 'data' found in {mat_file}")
+
+
+import numpy as np
+import os
+import scipy.io as sio
+
+# 定义文件夹路径
+source_data_folder = 'data/BCIIV2b_mat/T_BCIIV2b_mat'  # 源域数据文件夹路径
+target_data_folder = 'data/BCIIV2b_mat/E_BCIIV2b_mat'  # 目标域数据文件夹路径
+output_source_folder = 'data/BCIIV2b_mat/Processed_T_BCIIV2b_mat'  # 处理后的源域数据文件夹
+output_target_folder = 'data/BCIIV2b_mat/Processed_E_BCIIV2b_mat'  # 处理后的目标域数据文件夹
+
+# 创建输出文件夹
+if not os.path.exists(output_source_folder):
+    os.makedirs(output_source_folder)
+
+if not os.path.exists(output_target_folder):
+    os.makedirs(output_target_folder)
+
+# 设置统一的实验数量
+source_experiment_size = 400  # 源域标准实验数
+target_experiment_size = 320  # 目标域标准实验数
+
+def process_data_and_labels(data, labels, required_size):
+    """处理数据和标签，将数据和标签扩充或截断到指定的大小"""
+    current_size = data.shape[0]  # 当前实验数量
+    
+    if current_size < required_size:
+        # 实验数不足时，补全数据（填充零值）
+        padding_data = np.zeros((required_size - current_size,) + data.shape[1:])
+        processed_data = np.vstack((data, padding_data))
+        
+        # 标签补全（选择填充最后一个标签）
+        padding_labels = np.full((required_size - current_size,), labels[-1])
+        processed_labels = np.concatenate((labels, padding_labels))
+    
+    else:
+        # 实验数超出时，进行截断
+        processed_data = data[:required_size]
+        processed_labels = labels[:required_size]
+    
+    return processed_data, processed_labels
+
+# 处理源域数据
+for file in os.listdir(source_data_folder):
+    if file.endswith('.mat'):
+        # 加载.mat文件
+        mat_data = sio.loadmat(os.path.join(source_data_folder, file))
+        data = mat_data['data']  # 假设数据存储在 'data' 键中
+        labels = mat_data['label'].flatten()  # 标签展平为一维数组
+        
+        # 处理数据和标签
+        processed_data, processed_labels = process_data_and_labels(data, labels, source_experiment_size)
+        
+        # 保存处理后的数据和标签到新文件
+        sio.savemat(os.path.join(output_source_folder, file), {'data': processed_data, 'label': processed_labels})
+
+# 处理目标域数据
+for file in os.listdir(target_data_folder):
+    if file.endswith('.mat'):
+        # 加载.mat文件
+        mat_data = sio.loadmat(os.path.join(target_data_folder, file))
+        data = mat_data['data']  # 假设数据存储在 'data' 键中
+        labels = mat_data['label'].flatten()  # 标签展平为一维数组
+        
+        # 处理数据和标签
+        processed_data, processed_labels = process_data_and_labels(data, labels, target_experiment_size)
+        
+        # 保存处理后的数据和标签到新文件
+        sio.savemat(os.path.join(output_target_folder, file), {'data': processed_data, 'label': processed_labels})
+
+print("源域和目标域数据处理完成！")
