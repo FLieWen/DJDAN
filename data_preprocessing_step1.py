@@ -138,8 +138,8 @@ highcut = 38  # 高频截止
 order = 3  # 滤波器的阶数
 
 # 定义文件夹路径
-data_folder = 'data/BCIIV2b_mat'
-filtered_data_folder = 'data/Filtered_BCIIV2b_mat'
+data_folder = 'data/T_BCIIV2b_mat'
+filtered_data_folder = 'data/T_Filtered_BCIIV2b_mat'
 
 # 创建输出文件夹
 if not os.path.exists(filtered_data_folder):
