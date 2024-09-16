@@ -114,6 +114,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import os
 import scipy.io as sio
+import numpy as np
 
 class EEGFeatureExtractor(nn.Module):
     def __init__(self, num_electrodes):
@@ -161,11 +162,12 @@ class EEGFeatureExtractor(nn.Module):
         
         # Dropout
         x = self.dropout(x)
+        print(x.size())
         
         return x
 
 # 定义数据文件夹路径
-data_folder = 'data/Standardized_BCIIV2b_mat'
+data_folder = 'data/BCIIV2b_mat/new_Processed_BCIIV2b_mat'
 filtered_data_folder = 'data/feature_extractor_BCIIV2b_mat'
 
 # 创建输出文件夹
@@ -196,7 +198,7 @@ for file in os.listdir(data_folder):
             
             # 转换为numpy数组以便于保存
             output_np = output.detach().numpy()  # 将输出转换为 numpy 数组
-            
+
             # 构建新的文件名
             output_file_name = f"{file.split('.')[0]}_sample_{sample_idx}.mat"
             # 保存输出和标签到新的.mat文件
@@ -209,7 +211,104 @@ torch.save(model.state_dict(), model_path)
 
 print("模型已保存！")
 print("特征提取完成！")
+FeatureExtractor = EEGFeatureExtractor(3)
+print(FeatureExtractor)
 
+
+# # 每一个EEG数据文件都会输出多个文件
+# import torch
+# import torch.nn as nn
+# import torch.nn.functional as F
+# import os
+# import scipy.io as sio
+
+# class EEGFeatureExtractor(nn.Module):
+#     def __init__(self, num_electrodes):
+#         super(EEGFeatureExtractor, self).__init__()
+        
+#         # Temporal Convolution: 1D convolution along the time axis
+#         self.temporal_conv = nn.Conv2d(1, 40, (1, 25))
+        
+#         # Spatial Convolution: 1D convolution along the electrode axis
+#         self.spatial_conv = nn.Conv2d(40, 40, (3, 1))
+        
+#         # Batch Normalization
+#         self.bn = nn.BatchNorm2d(40)
+        
+#         # Average Pooling: Pooling over time
+#         self.avg_pool = nn.AvgPool2d((1, 75), stride=(1, 15))
+
+#         # Logarithm Activation
+#         self.log_activation = torch.log
+        
+#         # Dropout
+#         self.dropout = nn.Dropout(p=0.5)
+
+#     def forward(self, x):
+#         # Temporal Convolution
+#         x = self.temporal_conv(x)
+#         # Spatial Convolution
+#         x = self.spatial_conv(x)
+#         # Batch Normalization
+#         x = self.bn(x)
+#         # Square Activation
+#         x = x ** 2
+#         # Average Pooling
+#         x = self.avg_pool(x)
+#         # Logarithm Activation
+#         x = self.log_activation(x)  # Adding epsilon to avoid log(0)
+#         # Dropout
+#         x = self.dropout(x)
+        
+#         return x
+
+# # 定义数据文件夹路径
+# data_folder = 'data/Standardized_BCIIV2b_mat'
+# filtered_data_folder = 'data/feature_extractor_BCIIV2b_mat'
+
+# # 创建输出文件夹
+# if not os.path.exists(filtered_data_folder):
+#     os.makedirs(filtered_data_folder)
+
+# # 指定模型参数
+# num_electrodes = 3  # 使用的电极数量
+# model = EEGFeatureExtractor(num_electrodes=num_electrodes)
+
+# # 对文件进行处理
+# for file in os.listdir(data_folder):
+#     if file.endswith('.mat'):
+#         # 加载.mat文件
+#         mat_data = sio.loadmat(os.path.join(data_folder, file))
+        
+#         # 提取数据和标签，假设数据字段名为 'data' 和 'label'
+#         data = mat_data['data']  # shape: (320, 3, 1000)
+#         labels = mat_data['label'].flatten()  # 展平标签
+
+#         # 对每个样本进行特征提取
+#         for sample_idx in range(data.shape[0]):  # 遍历每个样本
+#             input_data = torch.tensor(data[sample_idx], dtype=torch.float32)  # shape: (3, 1000)
+#             input_data = input_data.unsqueeze(0)  # 增加批次维度，形状变为 (1, 3, 1000)
+
+#             # Forward pass
+#             output = model(input_data)  # output shape will depend on the pooling and input dimensions
+            
+#             # 转换为numpy数组以便于保存
+#             output_np = output.detach().numpy()  # 将输出转换为 numpy 数组
+            
+#             # 构建新的文件名
+#             output_file_name = f"{file.split('.')[0]}_sample_{sample_idx}.mat"
+#             # 保存输出和标签到新的.mat文件
+#             sio.savemat(os.path.join(filtered_data_folder, output_file_name), 
+#                         {'extracted_features': output_np, 'label': labels[sample_idx]})
+
+# # 保存模型
+# model_path = "feature_extractor.pth"
+# torch.save(model.state_dict(), model_path)
+
+# print("模型已保存！")
+# print("特征提取完成！")
+# FeatureExtractor = EEGFeatureExtractor(3)
+# print(FeatureExtractor)
 
 # # 0915
 # import torch
