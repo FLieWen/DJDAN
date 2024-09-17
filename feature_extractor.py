@@ -122,24 +122,25 @@ class EEGFeatureExtractor(nn.Module):
         
         # Temporal Convolution: 1D convolution along the time axis
         self.temporal_conv = nn.Conv1d(in_channels=num_electrodes, 
-                                       out_channels=40, 
+                                       out_channels=60, 
                                        kernel_size=25, 
                                        stride=1)
         
         # Spatial Convolution: 1D convolution along the electrode axis
-        self.spatial_conv = nn.Conv1d(in_channels=40, 
-                                      out_channels=40, 
+        self.spatial_conv = nn.Conv1d(in_channels=60, 
+                                      out_channels=60, 
                                       kernel_size=num_electrodes, 
                                       stride=1)
         
         # Batch Normalization
-        self.bn = nn.BatchNorm1d(40)
+        self.bn = nn.BatchNorm1d(60)
         
         # Average Pooling: Pooling over time
         self.avg_pool = nn.AvgPool1d(kernel_size=75, stride=15)
         
         # Dropout
         self.dropout = nn.Dropout(p=0.5)
+
 
     def forward(self, x):
         # Temporal Convolution

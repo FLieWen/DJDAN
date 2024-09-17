@@ -6,60 +6,60 @@ import scipy.io as sio
 import os
 import numpy as np
 
-# 加载预训练的特征提取器
-class EEGFeatureExtractor(nn.Module):
-    def __init__(self, num_electrodes):
-        super(EEGFeatureExtractor, self).__init__()
+# # 加载预训练的特征提取器
+# class EEGFeatureExtractor(nn.Module):
+#     def __init__(self, num_electrodes):
+#         super(EEGFeatureExtractor, self).__init__()
         
-        # Temporal Convolution: 1D convolution along the time axis
-        self.temporal_conv = nn.Conv1d(in_channels=num_electrodes, 
-                                       out_channels=40, 
-                                       kernel_size=25, 
-                                       stride=1)
+#         # Temporal Convolution: 1D convolution along the time axis
+#         self.temporal_conv = nn.Conv1d(in_channels=num_electrodes, 
+#                                        out_channels=40, 
+#                                        kernel_size=25, 
+#                                        stride=1)
         
-        # Spatial Convolution: 1D convolution along the electrode axis
-        self.spatial_conv = nn.Conv1d(in_channels=40, 
-                                      out_channels=40, 
-                                      kernel_size=num_electrodes, 
-                                      stride=1)
+#         # Spatial Convolution: 1D convolution along the electrode axis
+#         self.spatial_conv = nn.Conv1d(in_channels=40, 
+#                                       out_channels=40, 
+#                                       kernel_size=num_electrodes, 
+#                                       stride=1)
         
-        # Batch Normalization
-        self.bn = nn.BatchNorm1d(40)
+#         # Batch Normalization
+#         self.bn = nn.BatchNorm1d(40)
         
-        # Average Pooling: Pooling over time
-        self.avg_pool = nn.AvgPool1d(kernel_size=75, stride=15)
+#         # Average Pooling: Pooling over time
+#         self.avg_pool = nn.AvgPool1d(kernel_size=75, stride=15)
         
-        # Dropout
-        self.dropout = nn.Dropout(p=0.5)
+#         # Dropout
+#         self.dropout = nn.Dropout(p=0.5)
 
-    def forward(self, x):
-        # Temporal Convolution
-        x = self.temporal_conv(x)
+#     def forward(self, x):
+#         # Temporal Convolution
+#         x = self.temporal_conv(x)
         
-        # Spatial Convolution
-        x = self.spatial_conv(x)
+#         # Spatial Convolution
+#         x = self.spatial_conv(x)
         
-        # Batch Normalization
-        x = self.bn(x)
+#         # Batch Normalization
+#         x = self.bn(x)
         
-        # Square Activation
-        x = x ** 2
+#         # Square Activation
+#         x = x ** 2
         
-        # Average Pooling
-        x = self.avg_pool(x)
+#         # Average Pooling
+#         x = self.avg_pool(x)
         
-        # Logarithm Activation
-        x = torch.log(x + 1e-6)  # Adding epsilon to avoid log(0)
+#         # Logarithm Activation
+#         x = torch.log(x + 1e-6)  # Adding epsilon to avoid log(0)
         
-        # Dropout
-        x = self.dropout(x)
-        print(x.size())
+#         # Dropout
+#         x = self.dropout(x)
+#         print(x.size())
 
-        return x
+#         return x
 
-feature_extractor = EEGFeatureExtractor(num_electrodes=3)
-feature_extractor.load_state_dict(torch.load('feature_extractor.pth'))
-feature_extractor.eval()  # 切换到评估模式
+# feature_extractor = EEGFeatureExtractor(num_electrodes=3)
+# feature_extractor.load_state_dict(torch.load('feature_extractor.pth'))
+# feature_extractor.eval()  # 切换到评估模式
 
 
 # 自定义数据集类，用于加载.mat文件中的特征数据
@@ -101,7 +101,7 @@ class EEGClassifier(nn.Module):
     def __init__(self, input_size, num_classes):
         super(EEGClassifier, self).__init__()
         # 定义一个1D卷积层，C-Conv，输出的类别数量是num_classes
-        self.conv1 = nn.Conv1d(in_channels=input_size, out_channels=num_classes, kernel_size=40)
+        self.conv1 = nn.Conv1d(in_channels=input_size, out_channels=num_classes, kernel_size=60)
         # 使用Softmax激活函数将输出转为概率
         self.softmax = nn.Softmax(dim=1)
     
@@ -140,22 +140,23 @@ def train_model(model, dataloader, criterion, optimizer, num_epochs=25):
         
         print(f'Epoch {epoch + 1}/{num_epochs}, Loss: {epoch_loss:.4f}, Accuracy: {accuracy:.2f}%')
 
-# # 加载数据集
-# data_dir = 'data/feature_extractor_BCIIV2b_mat'  # 你的特征文件路径
-# dataset = BCI_Dataset(data_dir)
-# dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
-source_data_dir = 'data/BCIIV2b_mat/Processed_T_BCIIV2b_mat'
-target_data_dir = 'data/BCIIV2b_mat/Processed_E_BCIIV2b_mat'
+# 加载数据集
+data_dir = 'data/feature_extractor_BCIIV2b_mat'  # 你的特征文件路径
+dataset = BCI_Dataset(data_dir)
+dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
+# source_data_dir = 'data/BCIIV2b_mat/Processed_T_BCIIV2b_mat'
+# target_data_dir = 'data/BCIIV2b_mat/Processed_E_BCIIV2b_mat'
 
-source_dataset = BCI_Dataset(source_data_dir)
-target_dataset = BCI_Dataset(target_data_dir)
+# source_dataset = BCI_Dataset(source_data_dir)
+# target_dataset = BCI_Dataset(target_data_dir)
 
-source_loader = DataLoader(source_dataset, batch_size=32, shuffle=True)
-target_loader = DataLoader(target_dataset, batch_size=32, shuffle=True)
-source_features = feature_extractor(source_loader)
-target_features = feature_extractor(target_loader)
+# source_loader = DataLoader(source_dataset, batch_size=32, shuffle=True)
+# target_loader = DataLoader(target_dataset, batch_size=32, shuffle=True)
+# source_features = feature_extractor(source_loader)
+# target_features = feature_extractor(target_loader)
+
 # 初始化模型、损失函数和优化器
-input_size = 40  # 输入的特征维度
+input_size = 60  # 输入的特征维度
 num_classes = 2  # 二分类问题
 model = EEGClassifier(input_size, num_classes)
 
