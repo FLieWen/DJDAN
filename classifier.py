@@ -50,10 +50,10 @@ class EEGClassifier(nn.Module):
     
     # 前向传播函数
     def forward(self, x):
-        print("aaa",x.size())
+        # print("aaa",x.size())
         x = self.conv1(x)
         x = self.softmax(x)
-        print(x.size())
+        # print(x.size())
         return x
 
 # 定义训练函数

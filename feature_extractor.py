@@ -103,9 +103,8 @@ torch.save(model.state_dict(), model_path)
 
 print("模型已保存！")
 print("特征提取完成！")
-FeatureExtractor = EEGFeatureExtractor(3)
-print(FeatureExtractor)
-
+# FeatureExtractor = EEGFeatureExtractor(3)
+# print(FeatureExtractor)
 
 
 
