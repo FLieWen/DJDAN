@@ -185,71 +185,71 @@
 
 # print("源域和目标域数据处理完成！")
 
-import torch
-from torch.utils.data import Dataset, DataLoader
-import scipy.io
-import os
-import numpy as np
-import torch.nn as nn
+# import torch
+# from torch.utils.data import Dataset, DataLoader
+# import scipy.io
+# import os
+# import numpy as np
+# import torch.nn as nn
 
-# 自定义 Dataset，用于加载 .mat 文件
-class BCIIV2bDataset(Dataset):
-    def __init__(self, mat_files_folder):
-        self.mat_files_folder = mat_files_folder
-        self.mat_files = [f for f in os.listdir(mat_files_folder) if f.endswith('.mat')]
+# # 自定义 Dataset，用于加载 .mat 文件
+# class BCIIV2bDataset(Dataset):
+#     def __init__(self, mat_files_folder):
+#         self.mat_files_folder = mat_files_folder
+#         self.mat_files = [f for f in os.listdir(mat_files_folder) if f.endswith('.mat')]
 
-    def __len__(self):
-        return len(self.mat_files)
+#     def __len__(self):
+#         return len(self.mat_files)
 
-    def __getitem__(self, idx):
-        # 加载 .mat 文件
-        mat_file = self.mat_files[idx]
-        mat_data = scipy.io.loadmat(os.path.join(self.mat_files_folder, mat_file))
+#     def __getitem__(self, idx):
+#         # 加载 .mat 文件
+#         mat_file = self.mat_files[idx]
+#         mat_data = scipy.io.loadmat(os.path.join(self.mat_files_folder, mat_file))
         
-        # 提取数据和标签 (根据你的 .mat 文件结构，假设 'data' 和 'labels' 是键名)
-        data = mat_data['extracted_features']  # 信号数据
-        label = mat_data['label']  # 标签
+#         # 提取数据和标签 (根据你的 .mat 文件结构，假设 'data' 和 'labels' 是键名)
+#         data = mat_data['extracted_features']  # 信号数据
+#         label = mat_data['label']  # 标签
         
-        # 转换数据类型为 torch.Tensor
-        data = torch.tensor(data, dtype=torch.float32)
-        label = torch.tensor(label, dtype=torch.long)  # 标签转换为 long 类型
+#         # 转换数据类型为 torch.Tensor
+#         data = torch.tensor(data, dtype=torch.float32)
+#         label = torch.tensor(label, dtype=torch.long)  # 标签转换为 long 类型
 
-        return data, label
+#         return data, label
 
-# 计算类别数 C 的函数
-def get_num_classes(data_loader):
-    unique_labels = set()  # 用于存储唯一的标签
-    for _, labels in data_loader:  # 遍历 DataLoader 获取标签
-        unique_labels.update(labels.numpy().flatten())  # 提取标签并将其添加到集合中
-    return len(unique_labels)
+# # 计算类别数 C 的函数
+# def get_num_classes(data_loader):
+#     unique_labels = set()  # 用于存储唯一的标签
+#     for _, labels in data_loader:  # 遍历 DataLoader 获取标签
+#         unique_labels.update(labels.numpy().flatten())  # 提取标签并将其添加到集合中
+#     return len(unique_labels)
 
-# 分类器定义
-class Classifier(nn.Module):
-    def __init__(self, C):
-        super(Classifier, self).__init__()
-        # C-Conv: 1 × 61 kernel, C output channels (number of classes)
-        self.conv = nn.Conv1d(40, C, kernel_size=61)
-        # Softmax
-        self.softmax = nn.Softmax(dim=1)
+# # 分类器定义
+# class Classifier(nn.Module):
+#     def __init__(self, C):
+#         super(Classifier, self).__init__()
+#         # C-Conv: 1 × 61 kernel, C output channels (number of classes)
+#         self.conv = nn.Conv1d(40, C, kernel_size=61)
+#         # Softmax
+#         self.softmax = nn.Softmax(dim=1)
 
-    def forward(self, x):
-        x = self.conv(x)
-        x = self.softmax(x)
-        return x
+#     def forward(self, x):
+#         x = self.conv(x)
+#         x = self.softmax(x)
+#         return x
 
-# 主函数部分
-if __name__ == "__main__":
-    # 加载自定义数据集
-    mat_folder_path = 'data/feature_extractor_BCIIV2b_mat'  # 设置 .mat 文件路径
-    dataset = BCIIV2bDataset(mat_folder_path)
+# # 主函数部分
+# if __name__ == "__main__":
+#     # 加载自定义数据集
+#     mat_folder_path = 'data/feature_extractor_BCIIV2b_mat'  # 设置 .mat 文件路径
+#     dataset = BCIIV2bDataset(mat_folder_path)
     
-    # 使用 DataLoader 加载数据
-    data_loader = DataLoader(dataset, batch_size=64, shuffle=True)
+#     # 使用 DataLoader 加载数据
+#     data_loader = DataLoader(dataset, batch_size=64, shuffle=True)
 
-    # 计算类别数 C
-    C = get_num_classes(data_loader)
-    print(f"数据集中类别数 C: {C}")
+#     # 计算类别数 C
+#     C = get_num_classes(data_loader)
+#     print(f"数据集中类别数 C: {C}")
 
-    # 初始化分类器
-    classifier = Classifier(C)
-    print(classifier)
+#     # 初始化分类器
+#     classifier = Classifier(C)
+#     print(classifier)

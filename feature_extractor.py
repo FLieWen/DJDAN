@@ -10,22 +10,22 @@ class EEGFeatureExtractor(nn.Module):
     def __init__(self, num_electrodes):
         super(EEGFeatureExtractor, self).__init__()
         
-        # Temporal Convolution: 1D convolution along the time axis
+        # 时间卷积：沿时间轴的一维卷积
         self.temporal_conv = nn.Conv1d(in_channels=num_electrodes, 
                                        out_channels=60, 
                                        kernel_size=25, 
                                        stride=1)
         
-        # Spatial Convolution: 1D convolution along the electrode axis
+        # 空间卷积：沿电极轴的一维卷积
         self.spatial_conv = nn.Conv1d(in_channels=60, 
                                       out_channels=60, 
                                       kernel_size=num_electrodes, 
                                       stride=1)
         
-        # Batch Normalization
+        # 批量标准化 Batch Normalization
         self.bn = nn.BatchNorm1d(60)
         
-        # Average Pooling: Pooling over time
+        # 平均池化：随着时间的推移池化 Average Pooling
         self.avg_pool = nn.AvgPool1d(kernel_size=75, stride=15)
         
         # Dropout
@@ -33,27 +33,27 @@ class EEGFeatureExtractor(nn.Module):
 
 
     def forward(self, x):
-        # Temporal Convolution
+        # 时间卷积
         x = self.temporal_conv(x)
         
-        # Spatial Convolution
+        # 空间卷积
         x = self.spatial_conv(x)
         
-        # Batch Normalization
+        # 批量标准化
         x = self.bn(x)
         
-        # Square Activation
+        # 平方激活
         x = x ** 2
         
-        # Average Pooling
+        # 平均池化
         x = self.avg_pool(x)
         
-        # Logarithm Activation
-        x = torch.log(x + 1e-6)  # Adding epsilon to avoid log(0)
-        
+        # 对数激活
+        x = torch.log(x + 1e-6)  # 避免 x = 0 时取 log(0) 
+         
         # Dropout
         x = self.dropout(x)
-        print(x.size())
+        # print(x.size())
         
         return x
 
@@ -75,7 +75,7 @@ for file in os.listdir(data_folder):
         # 加载.mat文件
         mat_data = sio.loadmat(os.path.join(data_folder, file))
         
-        # 提取数据和标签，假设数据字段名为 'data' 和 'label'
+        # 提取数据和标签，数据字段名为 'data' 和 'label'
         data = mat_data['data']  # shape: (320, 3, 1000)
         labels = mat_data['label'].flatten()  # 展平标签
 
@@ -84,14 +84,15 @@ for file in os.listdir(data_folder):
             input_data = torch.tensor(data[sample_idx], dtype=torch.float32)  # shape: (3, 1000)
             input_data = input_data.unsqueeze(0)  # 增加批次维度，形状变为 (1, 3, 1000)
 
-            # Forward pass
-            output = model(input_data)  # output shape will depend on the pooling and input dimensions
+            # 前向传播
+            output = model(input_data)
             
             # 转换为numpy数组以便于保存
             output_np = output.detach().numpy()  # 将输出转换为 numpy 数组
 
             # 构建新的文件名
             output_file_name = f"{file.split('.')[0]}_sample_{sample_idx}.mat"
+
             # 保存输出和标签到新的.mat文件
             sio.savemat(os.path.join(filtered_data_folder, output_file_name), 
                         {'extracted_features': output_np, 'label': labels[sample_idx]})
@@ -204,4 +205,3 @@ print(FeatureExtractor)
 
 # print(f"特征提取完成，所有样本的特征已保存到各自的.mat文件中！")
 # print(f"训练好的特征提取器模型已保存到 {model_save_path}")
-
