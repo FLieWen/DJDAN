@@ -1,3 +1,4 @@
+# 指数移动标准化
 import numpy as np
 import os
 import scipy.io as sio
@@ -7,7 +8,7 @@ beta = 0.999
 
 def exponential_moving_standardization(data, beta):
     """进行电极指数移动标准化"""
-    # 初始化
+    # 初始化加权均值weighted_mean与加权方差weighted_var
     weighted_mean = 0
     weighted_var = 0
     
@@ -49,7 +50,7 @@ for file in os.listdir(data_folder):
         # 加载 .mat 文件
         mat_data = sio.loadmat(os.path.join(data_folder, file))
 
-        # 假设数据存储在 'data' 和 'label' 字段中
+        # 数据存储在 'data' 和 'label' 字段中
         data = mat_data['data']  # shape: (320, 3, 1000)
         label = mat_data['label'].flatten()  # 将标签展平为一维数组
         

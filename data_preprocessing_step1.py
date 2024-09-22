@@ -1,3 +1,4 @@
+# 数据预处理：三阶巴特沃斯带通滤波器
 import numpy as np
 import os
 import scipy.io as sio
@@ -31,7 +32,7 @@ for file in os.listdir(data_folder):
         # 加载.mat文件
         mat_data = sio.loadmat(os.path.join(data_folder, file))
         
-        # 假设数据存储在 'data' 和 'label' 的字段中
+        # 数据存储在 'data' 和 'label' 的字段中
         data = mat_data['data']  # shape: (320, 3, 1000)
         labels = mat_data['label'].flatten()  # 标签
         num_samples, num_electrodes, num_timepoints = data.shape
