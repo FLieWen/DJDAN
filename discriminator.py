@@ -11,44 +11,44 @@ class EEGFeatureExtractor(nn.Module):
     def __init__(self, num_electrodes):
         super(EEGFeatureExtractor, self).__init__()
         
-        # Temporal Convolution: 1D convolution along the time axis
+        # 时间卷积：沿时间轴的一维卷积
         self.temporal_conv = nn.Conv1d(in_channels=num_electrodes, 
                                        out_channels=60, 
                                        kernel_size=25, 
                                        stride=1)
         
-        # Spatial Convolution: 1D convolution along the electrode axis
+        # 空间卷积：沿电极轴的一维卷积
         self.spatial_conv = nn.Conv1d(in_channels=60, 
                                       out_channels=60, 
                                       kernel_size=num_electrodes, 
                                       stride=1)
         
-        # Batch Normalization
+        # 批量标准化 Batch Normalization
         self.bn = nn.BatchNorm1d(60)
         
-        # Average Pooling: Pooling over time
+        # 平均池化：随着时间的推移池化 Average Pooling: Pooling over time
         self.avg_pool = nn.AvgPool1d(kernel_size=75, stride=15)
         
         # Dropout
         self.dropout = nn.Dropout(p=0.5)
 
     def forward(self, x):
-        # Temporal Convolution
+        # 时间卷积
         x = self.temporal_conv(x)
         
-        # Spatial Convolution
+        # 空间卷积
         x = self.spatial_conv(x)
         
-        # Batch Normalization
+        # 批量标准化
         x = self.bn(x)
         
-        # Square Activation
+        # 平方激活
         x = x ** 2
         
-        # Average Pooling
+        # 平均池化
         x = self.avg_pool(x)
         
-        # Logarithm Activation
+        # 对数激活
         x = torch.log(x + 1e-6)  # Adding epsilon to avoid log(0)
         
         # Dropout
@@ -92,7 +92,7 @@ class BCI_Dataset(Dataset):
         for file_name in os.listdir(data_dir):
             if file_name.endswith('.mat'):
                 mat_data = sio.loadmat(os.path.join(data_dir, file_name))
-                features.append(mat_data['data'])  # 假设数据在 'data' 键中
+                features.append(mat_data['data'])  # 数据在 'data' 键中
                 labels.append(mat_data['label'].flatten())  # 标签展平为一维数组
         features = np.concatenate(features, axis=0)
         labels = np.concatenate(labels, axis=0)

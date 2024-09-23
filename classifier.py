@@ -19,7 +19,7 @@ class BCI_Dataset(Dataset):
         for file_name in os.listdir(data_dir):
             if file_name.endswith('.mat'):
                 mat_data = sio.loadmat(os.path.join(data_dir, file_name))
-                # 假设.mat文件中有'features'和'labels'键
+                # .mat文件中有'extracted_features'和'labels'键
                 features.append(mat_data['extracted_features'])
                 labels.append(mat_data['label'])
         
@@ -73,13 +73,13 @@ def train_model(model, dataloader, criterion, optimizer, num_epochs=25):
             loss.backward()  # 反向传播
             optimizer.step()  # 优化器更新参数
             
-            running_loss += loss.item() * inputs.size(0)
-            _, predicted = torch.max(outputs, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
+            running_loss += loss.item() * inputs.size(0)  #  累加损失
+            _, predicted = torch.max(outputs, 1)  #  计算每个样本的预测类别
+            total += labels.size(0)  #  累加样本总数
+            correct += (predicted == labels).sum().item()  #  计算当前批次中正确预测的样本数量
         
-        epoch_loss = running_loss / total
-        accuracy = correct / total * 100
+        epoch_loss = running_loss / total  #  计算当前 epoch 的平均损失
+        accuracy = correct / total * 100  #  计算模型的准确率
         
         print(f'Epoch {epoch + 1}/{num_epochs}, Loss: {epoch_loss:.4f}, Accuracy: {accuracy:.2f}%')
 
