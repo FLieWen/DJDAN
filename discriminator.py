@@ -78,7 +78,7 @@ class EEGClassifier(nn.Module):
         return x
 
 classifier = EEGClassifier(input_size=60, num_classes=2)
-classifier.load_state_dict(torch.load('classifier.pth'))
+classifier.load_state_dict(torch.load('best_classifier.pth'))
 classifier.eval()  # 切换到评估模式
 
 # 数据加载器的定义
@@ -112,8 +112,8 @@ target_data_dir = 'data/BCIIV2b_mat/Processed_E_BCIIV2b_mat'
 source_dataset = BCI_Dataset(source_data_dir)
 target_dataset = BCI_Dataset(target_data_dir)
 
-source_loader = DataLoader(source_dataset, batch_size=32, shuffle=True)
-target_loader = DataLoader(target_dataset, batch_size=32, shuffle=True)
+source_loader = DataLoader(source_dataset, batch_size=64, shuffle=True)
+target_loader = DataLoader(target_dataset, batch_size=64, shuffle=True)
 
 # 全局鉴别器的定义
 class GlobalDiscriminator(nn.Module):
@@ -163,8 +163,8 @@ local_discriminator = LocalDiscriminator(num_classes=1)
 
 # 损失函数和训练过程
 criterion = nn.BCEWithLogitsLoss()
-optimizer_global = optim.Adam(global_discriminator.parameters(), lr=0.001)
-optimizer_local = optim.Adam(local_discriminator.parameters(), lr=0.001)
+optimizer_global = optim.Adam(global_discriminator.parameters(), lr=0.0005)
+optimizer_local = optim.Adam(local_discriminator.parameters(), lr=0.0005)
 
 # GRL函数 (用于梯度反转层)
 class GradientReversalLayer(torch.autograd.Function):

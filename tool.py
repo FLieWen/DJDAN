@@ -49,23 +49,30 @@
 # print(f"电极数量: {num_electrodes}")
 
 
-# import scipy.io as sio
+import scipy.io as sio
 
-# # 加载.mat文件
-# file_path = 'data/T_predictions/prediction_sample_542.mat'  # 替换为您的文件路径
-# mat_data = sio.loadmat(file_path)
+# 加载.mat文件
+file_path = 'data/BCIIV2a/BCIIV2a/test/A01E.mat'  # 替换为您的文件路径
+mat_data = sio.loadmat(file_path)
 
-# # 查看.mat文件中所有的键
-# print("Keys in the .mat file:", mat_data.keys())
+# 查看.mat文件中所有的键
+print("Keys in the .mat file:", mat_data.keys())
 
-# # 检查data和label的维度
+# 检查data和label的维度
 # data = mat_data['prediction']  # 替换为实际的字段名
 # label = mat_data['label']  # 替换为实际的字段名
+# header = mat_data['header']  # 替换为实际的字段名
+# version = mat_data['version']  # 替换为实际的字段名
+# globals = mat_data['globals']  # 替换为实际的字段名
+classlabel = mat_data['classlabel']  # 替换为实际的字段名
 
-# # 打印维度
+# 打印维度
 # print("Shape of data:", data.shape)
 # print("Shape of label:", label.shape)
-
+# print("Shape of header:", header.shape)
+# print("Shape of version:", version.shape)
+# print("Shape of globals:", globals.shape)
+print("Shape of classlable:", classlabel.shape)
 
 # import scipy.io
 # import numpy as np
@@ -113,16 +120,16 @@
 #     else:
 #         print(f"No 'data' found in {mat_file}")
 
-
+# 源域、目标域数据处理
 # import numpy as np
 # import os
 # import scipy.io as sio
 
 # # 定义文件夹路径
-# source_data_folder = 'data/BCIIV2b_mat/T_BCIIV2b_mat'  # 源域数据文件夹路径
-# target_data_folder = 'data/BCIIV2b_mat/E_BCIIV2b_mat'  # 目标域数据文件夹路径
-# output_source_folder = 'data/BCIIV2b_mat/Processed_T_BCIIV2b_mat'  # 处理后的源域数据文件夹
-# output_target_folder = 'data/BCIIV2b_mat/Processed_E_BCIIV2b_mat'  # 处理后的目标域数据文件夹
+# source_data_folder = 'data/BCIIV2a/BCIIV2a/train'  # 源域数据文件夹路径
+# target_data_folder = 'data/BCIIV2a/BCIIV2a/test'  # 目标域数据文件夹路径
+# output_source_folder = 'data/BCIIV2a_mat/Processed_T_BCIIV2a_mat'  # 处理后的源域数据文件夹
+# output_target_folder = 'data/BCIIV2a_mat/Processed_E_BCIIV2a_mat'  # 处理后的目标域数据文件夹
 
 # # 创建输出文件夹
 # if not os.path.exists(output_source_folder):

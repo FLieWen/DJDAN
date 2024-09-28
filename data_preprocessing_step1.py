@@ -13,7 +13,7 @@ def butter_bandpass_filter(data, lowcut, highcut, fs, order=3):
     return y
 
 # 设置参数
-fs = 1000  # 采样率
+fs = 250  # 采样率
 lowcut = 4  # 低频截止
 highcut = 38  # 高频截止
 order = 3  # 滤波器的阶数
